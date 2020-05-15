@@ -5,8 +5,6 @@ Build a numpy grid with sample configurations
 import numpy as np
 from skimage.draw import disk
 
-from . import ArrayMixin
-
 
 def generate_mask_box(center, size, shape):
     """
@@ -43,12 +41,28 @@ def generate_mask_box(center, size, shape):
     return mask
 
 
+class ArrayMixin:
+    """
+    Enables to use == on Sample and Lattice
+    """
+    def __eq__(self, other):
+        from numpy import array_equal
+        return array_equal(self.value, other.value)
+
+    @property
+    def value(self):
+        """
+        :return: (ndarray) returns the aray
+        """
+        return self._array
+
+
 class Sample(ArrayMixin):
-    def __init__(self, shape=[100, 100]):
+    def __init__(self, shape: list = [100, 100]):
         """
         :param shape: list as used in numpy
         """
-        self._grid = np.zeros(shape, dtype=np.bool)
+        self._array = np.zeros(shape, dtype=np.bool)
 
     @property
     def shape(self):
@@ -56,47 +70,42 @@ class Sample(ArrayMixin):
 
         :return: (list) shape
         """
-        return self._grid.shape
+        return self._array.shape
 
-    def add_position(self, positions=[[10, 20], [50, 50]]):
+    def add_position(self, positions: list = [[10, 20], [50, 50]]):
         """
 
         :param positions: list of sites
         :return:
         """
         for p in positions:
-            self._grid[p] = 1
+            self._array[tuple(p)] = 1
 
-    def add_rect(self, origin=[20, 20], size=[10, 10]):
+    def add_rect(self, origin: list = [20, 20], size: list = [10, 10]):
         """
 
         :param origin: (list) origin coordinate
         :param size: (list) size
         :return:
         """
-        self._grid += generate_mask_box(center=origin, size=size, shape=self.shape)
+        self._array += generate_mask_box(center=origin, size=size, shape=self.shape)
 
-    def add_disk(self, origin=[20, 20], radius=10):
+    def add_disk(self, origin: list = [20, 20], radius: float = 10):
         """
 
         :param origin: (list) origin coordinate
         :param radius: (int) radius
         :return:
         """
-        self._grid += disk(center=origin, radius=radius, shape=self.shape)
+        self._array += disk(center=origin, radius=radius, shape=self.shape)
 
-    def add_random(self, probability=0.5):
+    def add_random(self, probability: (float or np.ndarray) = 0.5):
         """
 
-        :param probability: (float) probability of loading sites
+        :param probability: (float of ndarray) probability of loading sites, site selective if ndarray
         :return:
         """
-        np.where(np.random.random(self.shape) < 0.5, np.ones_like(self._grid), self._grid)
-
-    @property
-    def value(self):
-        """
-
-        :return: (ndarray) returns the sample
-        """
-        return self._grid
+        if type(probability) is np.ndarray:
+            assert np.array_equal(probability.shape, self._array.shape), f"Probability shape missmatch:" \
+                                                                         f"{probability.shape}"
+        np.where(np.random.random(self.shape) < probability, np.ones_like(self._array), self._array)

@@ -1,5 +1,5 @@
 numpy~=1.18.4
 scikit-image~=0.17.2
 pytest~=5.4.2
-uas~=1.0.1
+uas~=0.1
 setuptools~=46.3.0

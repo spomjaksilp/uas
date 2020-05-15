@@ -15,4 +15,4 @@ class TestLattice:
         lattice = Lattice(sample.value)
 
         # assert
-        assert sample.value == lattice.value
+        assert sample == lattice
