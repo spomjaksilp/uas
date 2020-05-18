@@ -11,9 +11,9 @@ class Move:
     Defines a single move from a origin coordinate to a target coordinate
     """
 
-    def __init__(self, origin: np.ndarray, target: np.ndarray):
+    def __init__(self, origin: np.ndarray, target: np.ndarray or None = None):
         self.origin = origin
-        self.target = target
+        self.target = origin if target is None else target
         self._path = []
         self.calculate_moves()
 
@@ -23,6 +23,14 @@ class Move:
         :return:
         """
         raise NotImplementedError
+
+
+class Discard(Move):
+    """
+    Discard an atom in a site
+    """
+    def calculate_moves(self):
+        self._path.append(self.origin)
 
 
 class Type1(Move):
@@ -54,21 +62,31 @@ class Plan:
     An ordered collection of moves
     """
 
-    def __init__(self, move: Move = Move):
+    def __init__(self, move: Move = Move, discard = Discard):
         self.move = move
+        self.discard = discard
         self._moves = []
 
     def __len__(self):
         return len(self._moves)
 
-    def add_move(self, origin: list, target: list, lattice: Lattice):
+    def add_move(self, origin: np.ndarray, target: np.ndarray, lattice: Lattice):
         """
-        Add moves to internal path
-        :param origin: (list) coordinate
-        :param target: (list) coordinate
-        :param lattice:
-        :return:
+        Adds moves to the list of moves
+        :param origin: (ndarray) coordinate
+        :param target: (ndarray) coordinate
+        :param lattice: (Lattice)
+        :return: (Lattice)
         """
         self._moves.append(self.move(origin=origin, target=target))
         return Lattice.move(lattice, origin, target)
 
+    def add_discard(self, origin: np.ndarray, lattice: Lattice):
+        """
+        Adds a discard move to the list of moves
+        :param origin: (ndarray) coordinate
+        :param lattice: (Lattice)
+        :return: (Lattice)
+        """
+        self._moves.append(self.discard(origin=origin))
+        return Lattice.move(lattice, origin, target=None)

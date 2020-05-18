@@ -6,7 +6,7 @@ import numpy as np
 from skimage.draw import disk
 
 
-def generate_mask_box(center, size, shape):
+def generate_mask_box(origin, size, shape):
     """
     generate a box of ones in a 2d image (with size shape) filled with zeros as mask.
     mask center is denoted by center.
@@ -16,14 +16,14 @@ def generate_mask_box(center, size, shape):
     :param size: integer
     :param shape: tuple/array like (size_x, size_y)
     """
-    size = int(size)
+    size_x, size_y = [int(_) for _ in size]
     mask = np.zeros(shape)
-    x, y = np.array(center)
+    x, y = np.array(origin)
 
-    x_low = x - size
-    x_high = x + size + 1
-    y_low = y - size
-    y_high = y + size + 1
+    x_low = x
+    x_high = x + size_x
+    y_low = y
+    y_high = y + size_y
 
     # now catch all error cases (index to high, index negative ...)
     if x_low < 0:
@@ -47,7 +47,8 @@ class ArrayMixin:
     """
     def __eq__(self, other):
         from numpy import array_equal
-        return array_equal(self.value, other.value)
+        result = array_equal(self.value, other.value)
+        return result
 
     @property
     def value(self):
@@ -58,7 +59,7 @@ class ArrayMixin:
 
 
 class Sample(ArrayMixin):
-    def __init__(self, shape: list = [100, 100]):
+    def __init__(self, shape: tuple = (100, 100)):
         """
         :param shape: list as used in numpy
         """
@@ -72,7 +73,7 @@ class Sample(ArrayMixin):
         """
         return self.array.shape
 
-    def add_position(self, positions: list = [[10, 20], [50, 50]]):
+    def add_position(self, positions: tuple = ((10, 20), (50, 50))):
         """
 
         :param positions: list of sites
@@ -81,16 +82,16 @@ class Sample(ArrayMixin):
         for p in positions:
             self.array[tuple(p)] = 1
 
-    def add_rect(self, origin: list = [20, 20], size: list = [10, 10]):
+    def add_rect(self, origin: tuple = (20, 20), size: tuple = (10, 10)):
         """
 
         :param origin: (list) origin coordinate
         :param size: (list) size
         :return:
         """
-        self.array += generate_mask_box(center=origin, size=size, shape=self.shape)
+        self.array += generate_mask_box(origin=origin, size=size, shape=self.shape).astype(np.bool)
 
-    def add_disk(self, origin: list = [20, 20], radius: float = 10):
+    def add_disk(self, origin: tuple = (20, 20), radius: float = 10):
         """
 
         :param origin: (list) origin coordinate
@@ -108,4 +109,4 @@ class Sample(ArrayMixin):
         if type(probability) is np.ndarray:
             assert np.array_equal(probability.shape, self.array.shape), f"Probability shape missmatch:" \
                                                                          f"{probability.shape}"
-        np.where(np.random.random(self.shape) < probability, np.ones_like(self.array), self.array)
+        self.array = np.where(np.random.random(self.shape) < probability, np.ones_like(self.array), self.array)

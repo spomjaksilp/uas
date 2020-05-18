@@ -26,8 +26,9 @@ class Lattice(ArrayMixin):
         return obj
 
     @staticmethod
-    def move(lattice, origin: np.ndarray, target: np.ndarray):
+    def move(lattice, origin: np.ndarray, target: np.ndarray or None):
         new_lattice = Lattice.from_lattice(lattice)
         new_lattice.value[tuple(origin)] = 0
-        new_lattice.value[tuple(target)] = 1
+        if target is not None:
+            new_lattice.value[tuple(target)] = 1
         return new_lattice
