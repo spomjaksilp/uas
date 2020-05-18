@@ -11,7 +11,7 @@ class Move:
     Defines a single move from a origin coordinate to a target coordinate
     """
 
-    def __init__(self, origin: list, target: list):
+    def __init__(self, origin: np.ndarray, target: np.ndarray):
         self.origin = origin
         self.target = target
         self._path = []
@@ -23,6 +23,30 @@ class Move:
         :return:
         """
         raise NotImplementedError
+
+
+class Type1(Move):
+    """
+    Type 1 move according to Léséleuc (2018).
+    Describes a move in between sites
+    """
+    def calculate_moves(self):
+        pass
+
+
+class Type2(Move):
+    """
+    Type 2 move according to Léséleuc (2018).
+    Describes a move on the connecting edges of sites
+    """
+    def calculate_moves(self):
+        self._path.append(self.origin)
+        difference = self.origin - self.target
+        pointer = np.zeros_like(self.origin) + self.origin
+        for component in difference:
+            # move
+            pointer += component
+            self._path.append(pointer)
 
 
 class Plan:

@@ -54,7 +54,7 @@ class ArrayMixin:
         """
         :return: (ndarray) returns the array
         """
-        return self._array
+        return self.array
 
 
 class Sample(ArrayMixin):
@@ -62,7 +62,7 @@ class Sample(ArrayMixin):
         """
         :param shape: list as used in numpy
         """
-        self._array = np.zeros(shape, dtype=np.bool)
+        self.array = np.zeros(shape, dtype=np.bool)
 
     @property
     def shape(self):
@@ -70,7 +70,7 @@ class Sample(ArrayMixin):
 
         :return: (list) shape
         """
-        return self._array.shape
+        return self.array.shape
 
     def add_position(self, positions: list = [[10, 20], [50, 50]]):
         """
@@ -79,7 +79,7 @@ class Sample(ArrayMixin):
         :return:
         """
         for p in positions:
-            self._array[tuple(p)] = 1
+            self.array[tuple(p)] = 1
 
     def add_rect(self, origin: list = [20, 20], size: list = [10, 10]):
         """
@@ -88,7 +88,7 @@ class Sample(ArrayMixin):
         :param size: (list) size
         :return:
         """
-        self._array += generate_mask_box(center=origin, size=size, shape=self.shape)
+        self.array += generate_mask_box(center=origin, size=size, shape=self.shape)
 
     def add_disk(self, origin: list = [20, 20], radius: float = 10):
         """
@@ -97,7 +97,7 @@ class Sample(ArrayMixin):
         :param radius: (int) radius
         :return:
         """
-        self._array += disk(center=origin, radius=radius, shape=self.shape)
+        self.array += disk(center=origin, radius=radius, shape=self.shape)
 
     def add_random(self, probability: (float or np.ndarray) = 0.5):
         """
@@ -106,6 +106,6 @@ class Sample(ArrayMixin):
         :return:
         """
         if type(probability) is np.ndarray:
-            assert np.array_equal(probability.shape, self._array.shape), f"Probability shape missmatch:" \
+            assert np.array_equal(probability.shape, self.array.shape), f"Probability shape missmatch:" \
                                                                          f"{probability.shape}"
-        np.where(np.random.random(self.shape) < probability, np.ones_like(self._array), self._array)
+        np.where(np.random.random(self.shape) < probability, np.ones_like(self.array), self.array)
