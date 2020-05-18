@@ -52,7 +52,7 @@ class ArrayMixin:
     @property
     def value(self):
         """
-        :return: (ndarray) returns the aray
+        :return: (ndarray) returns the array
         """
         return self._array
 
