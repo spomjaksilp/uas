@@ -6,7 +6,7 @@ from uas.helper import Sample
 from uas.strategy import StrategyTemplate, French
 from uas import Plan
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 TO_TEST = [
     [French, (100, 100)],
@@ -113,5 +113,5 @@ class TestStrategy:
         plan, end_state = strat.run()
 
         # assert
-        logging.debug(strat.report)
+        logging.info(strat.report)
         assert target_state == end_state

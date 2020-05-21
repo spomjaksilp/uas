@@ -4,8 +4,28 @@ From Paris
 
 import numpy as np
 from scipy.spatial import distance
+from numba import njit, types, typeof
 from uas import Lattice, Plan, Type2
 from . import StrategyTemplate
+
+
+# @njit((types.int16[:, :])(types.int16[:, :], types.int16[:]))
+def get_coordinates_from_distances(coordinates, coordinate_pair):
+    s_0 = coordinates[0][coordinate_pair[0]]
+    s_1 = coordinates[1][coordinate_pair[1]]
+    return np.array((s_0, s_1))
+
+
+@njit((types.boolean[:, :, :])(types.int16[::, ::], types.boolean[:, :, :], types.int16[::, ::], types.int16[::, ::]))
+def loop_over_distances(distances, visited, start_coordinates, target_coordinates):
+    for coord in distances:
+        s_0, s_1 = start_coordinates[0][coord[0]], target_coordinates[1][coord[1]]
+        if visited[0][s_0] or visited[1][s_1]:
+            # already sorted or there is no atom, go on
+            continue
+        visited[0][s_0] = 1
+        visited[1][s_1] = 1
+    return visited
 
 
 class French(StrategyTemplate):
@@ -32,18 +52,22 @@ class French(StrategyTemplate):
         dist_sorted = np.argsort(dist, axis=None)
         # https://stackoverflow.com/questions/29734660/python-numpy-keep-a-list-of-indices-of-a-sorted-2d-array
         coordinates_sorted = np.vstack(np.unravel_index(dist_sorted, dist.shape)).T
-        return coordinates_sorted
+        return coordinates_sorted.astype(np.int16)
 
     def run(self):
         # mark already sorted sites
         states_visited = np.where(self.start.value & self.target.value, np.ones_like(self.start.value),
                                   np.zeros_like(np.ones_like(self.start.value)))
         targets_visited = np.copy(states_visited)
+        visited = np.zeros(shape=(2, *states_visited.shape), dtype=np.bool)
+        visited[0] = states_visited
+        visited[1] = targets_visited
         # loop over sorted distances between start and target
+        visited = loop_over_distances(self.calculate_distances(), visited,
+                                      self.start.coordinates, self.target.coordinates)
         for coord in self.calculate_distances():
-            # TODO maybe use reshape to get rid of some part of the for loop
-            s_0 = self.start.coordinates[coord[0]]
-            s_1 = self.target.coordinates[coord[1]]
+            s_0, s_1 = self.start.coordinates[coord[0]], self.target.coordinates[coord[1]]
+            # s_0, s_1 = get_coordinates_from_distances([self.start.coordinates, self.target.coordinates], coord)
             if states_visited[tuple(s_0)] or targets_visited[tuple(s_1)]:
                 # already sorted or there is no atom, go on
                 continue

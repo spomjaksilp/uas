@@ -3,7 +3,17 @@
 """
 
 import numpy as np
+from numba import types, typed, typeof
+from numba.experimental import jitclass
 from uas import Lattice
+
+type_coordinate = types.int16[:]
+
+spec_move = [
+    ("origin", types.int16[:]),
+    ("target", types.int16[:]),
+    ("path", types.ListType(type_coordinate)),
+]
 
 
 class Move:
@@ -11,10 +21,10 @@ class Move:
     Defines a single move from a origin coordinate to a target coordinate
     """
 
-    def __init__(self, origin: np.ndarray, target: np.ndarray or None = None):
+    def __init__(self, origin: np.ndarray, target: np.ndarray):
         self.origin = origin
-        self.target = origin if target is None else target
-        self._path = []
+        self.target = target
+        self.path = typed.List.empty_list(type_coordinate)
         self.calculate_moves()
 
     def calculate_moves(self):
@@ -25,12 +35,14 @@ class Move:
         raise NotImplementedError
 
 
+@jitclass(spec_move)
 class Discard(Move):
     """
     Discard an atom in a site
     """
+
     def calculate_moves(self):
-        self._path.append(self.origin)
+        self.path.append(self.origin)
 
 
 class Type1(Move):
@@ -38,23 +50,26 @@ class Type1(Move):
     Type 1 move according to Léséleuc (2018).
     Describes a move in between sites
     """
+
     def calculate_moves(self):
         pass
 
 
+@jitclass(spec_move)
 class Type2(Move):
     """
     Type 2 move according to Léséleuc (2018).
     Describes a move on the connecting edges of sites
     """
+
     def calculate_moves(self):
-        self._path.append(self.origin)
+        self.path.append(self.origin)
         difference = self.origin - self.target
         pointer = np.zeros_like(self.origin) + self.origin
         for component in difference:
             # move
             pointer += component
-            self._path.append(pointer)
+            self.path.append(pointer)
 
 
 class Plan:
@@ -62,7 +77,7 @@ class Plan:
     An ordered collection of moves
     """
 
-    def __init__(self, move: Move = Move, discard = Discard):
+    def __init__(self, move: Move = Move, discard=Discard):
         self.move = move
         self.discard = discard
         self._moves = []
@@ -88,5 +103,5 @@ class Plan:
         :param lattice: (Lattice)
         :return: (Lattice)
         """
-        self._moves.append(self.discard(origin=origin))
+        self._moves.append(self.discard(origin=origin, target=origin))
         return Lattice.move(lattice, origin, target=None)

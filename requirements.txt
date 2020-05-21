@@ -3,3 +3,4 @@ scikit-image~=0.17.2
 pytest~=5.4.2
 uas~=0.1
 setuptools~=46.3.0
+numba~=0.49.1
