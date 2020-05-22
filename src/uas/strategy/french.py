@@ -15,17 +15,21 @@ def get_coordinates_from_distances(coordinates, coordinate_pair):
     s_1 = coordinates[1][coordinate_pair[1]]
     return np.array((s_0, s_1))
 
+type_coordinate = types.int16[:]
 
-@njit((types.boolean[:, :, :])(types.int16[::, ::], types.boolean[:, :, :], types.int16[::, ::], types.int16[::, ::]))
-def loop_over_distances(distances, visited, start_coordinates, target_coordinates):
+@njit((types.ListType(type_coordinate))(types.int16[:, :], types.boolean[:, :], types.boolean[:, :, :], types.int16[:, :], types.int16[:, :]))
+def loop_over_distances(distances, start_visited, target_visited, start_coordinates, target_coordinates):
     for coord in distances:
-        s_0, s_1 = start_coordinates[0][coord[0]], target_coordinates[1][coord[1]]
-        if visited[0][s_0] or visited[1][s_1]:
+        s_0, s_1 = start_coordinates[coord[0]], target_coordinates[coord[1]]
+        if start_visited[tuple(s_0)] or target_visited[tuple(s_1)]:
             # already sorted or there is no atom, go on
             continue
-        visited[0][s_0] = 1
-        visited[1][s_1] = 1
-    return visited
+        start_visited[tuple(s_0)] = 1
+        target_visited[tuple(s_1)] = 1
+    out = typed.List.empty_list(type_coordinate)
+    out.append(start_visited)
+    out.append(target_visited)
+    return out
 
 
 class French(StrategyTemplate):
@@ -56,26 +60,22 @@ class French(StrategyTemplate):
 
     def run(self):
         # mark already sorted sites
-        states_visited = np.where(self.start.value & self.target.value, np.ones_like(self.start.value),
+        start_visited = np.where(self.start.value & self.target.value, np.ones_like(self.start.value),
                                   np.zeros_like(np.ones_like(self.start.value)))
-        targets_visited = np.copy(states_visited)
-        visited = np.zeros(shape=(2, *states_visited.shape), dtype=np.bool)
-        visited[0] = states_visited
-        visited[1] = targets_visited
+        target_visited = np.copy(start_visited)
         # loop over sorted distances between start and target
-        visited = loop_over_distances(self.calculate_distances(), visited,
-                                      self.start.coordinates, self.target.coordinates)
+        # _, __ = loop_over_distances(self.calculate_distances(), start_visited, target_visited,
+        #                             self.start.coordinates, self.target.coordinates)
         for coord in self.calculate_distances():
             s_0, s_1 = self.start.coordinates[coord[0]], self.target.coordinates[coord[1]]
-            # s_0, s_1 = get_coordinates_from_distances([self.start.coordinates, self.target.coordinates], coord)
-            if states_visited[tuple(s_0)] or targets_visited[tuple(s_1)]:
+            if start_visited[tuple(s_0)] or target_visited[tuple(s_1)]:
                 # already sorted or there is no atom, go on
                 continue
             # add a move to the plan
             self.current_state = self.plan.add_move(origin=s_0, target=s_1, lattice=self.current_state)
             # mark sites as visited
-            states_visited[tuple(s_0)] = 1
-            targets_visited[tuple(s_1)] = 1
+            start_visited[tuple(s_0)] = 1
+            target_visited[tuple(s_1)] = 1
         # drop left over atoms
         remainder = Lattice(np.logical_and(self.current_state.value, np.logical_not(self.target.value)),
                             spacing=self.current_state.spacing)
