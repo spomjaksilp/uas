@@ -3,26 +3,31 @@
 """
 
 import numpy as np
-from numba import types, typed, typeof
+from numba import types, typed, typeof, njit
 from numba.experimental import jitclass
 from uas.helper import ArrayMixin
 
 
 spec_lattice = [
-    ("array", types.int16[:, :]),
+    ("array", types.boolean[:, :]),
     ("spacing", types.float32[:]),
     ("_coordinates_cached", types.boolean),
     ("_coordinates", types.int16[:, :]),
 ]
 
 
+@njit
+def calculate_coordinates(input_array):
+    return np.argwhere(input_array).astype(np.int16)
+
+
 # @jitclass(spec_lattice)
 class Lattice(ArrayMixin):
-    def __init__(self, array: np.ndarray, spacing: list = [5e-6, 5e-6]):
-        self.array = array
+    def __init__(self, array: np.ndarray, spacing: np.ndarray = np.array([5e-6, 5e-6], dtype=np.float32)):
+        self._array = array
         self.spacing = spacing
         self._coordinates_cached = False
-        self._coordinates = np.zeros((0, 0), dtype=np.int16)
+        self._coordinates = np.zeros((2, 2), dtype=np.int16)
 
     @property
     def coordinates(self):
@@ -30,20 +35,19 @@ class Lattice(ArrayMixin):
             return self._coordinates
         # get coordinates
         else:
-            self._coordinates = np.array(np.where(self.array == 1), dtype=np.int16).T
+            self._coordinates = calculate_coordinates(self.value)
             self._coordinates_cached = True
             return self._coordinates
 
-    @classmethod
-    def from_lattice(cls, lattice):
-        obj = cls(array=np.zeros_like(lattice.value), spacing=lattice.spacing)
-        obj.array = np.copy(lattice.array)
-        return obj
+    def move(self, origin: np.ndarray, target: np.ndarray):
+        self.value[tuple(origin)] = 0
+        self.value[tuple(target)] = 1
 
-    @staticmethod
-    def move(lattice, origin: np.ndarray, target: np.ndarray or None):
-        new_lattice = Lattice.from_lattice(lattice)
-        new_lattice.value[tuple(origin)] = 0
-        if target is not None:
-            new_lattice.value[tuple(target)] = 1
-        return new_lattice
+    def discard(self, origin: np.ndarray):
+        self.value[tuple(origin)] = 0
+
+
+def lattice_from_lattice(lattice):
+    obj = Lattice(array=np.zeros_like(lattice.value), spacing=lattice.spacing)
+    obj._array = np.copy(lattice.value)
+    return obj

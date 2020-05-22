@@ -105,7 +105,7 @@ class TestStrategy:
         start_state = Lattice(np.load("./data/sample_100_100.npy"))
 
         sample = Sample(shape)
-        sample.add_rect(origin=(20, 20), size=(5, 5))
+        sample.add_rect(origin=(20, 20), size=(15, 15))
         target_state = Lattice(sample.value)
 
         # act

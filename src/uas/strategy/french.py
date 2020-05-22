@@ -4,8 +4,9 @@ From Paris
 
 import numpy as np
 from scipy.spatial import distance
-from numba import njit, types, typeof
+from numba import njit, types, typeof, typed
 from uas import Lattice, Plan, Type2
+from uas.helper import type_coordinate_pair
 from . import StrategyTemplate
 
 
@@ -14,22 +15,6 @@ def get_coordinates_from_distances(coordinates, coordinate_pair):
     s_0 = coordinates[0][coordinate_pair[0]]
     s_1 = coordinates[1][coordinate_pair[1]]
     return np.array((s_0, s_1))
-
-type_coordinate = types.int16[:]
-
-@njit((types.ListType(type_coordinate))(types.int16[:, :], types.boolean[:, :], types.boolean[:, :, :], types.int16[:, :], types.int16[:, :]))
-def loop_over_distances(distances, start_visited, target_visited, start_coordinates, target_coordinates):
-    for coord in distances:
-        s_0, s_1 = start_coordinates[coord[0]], target_coordinates[coord[1]]
-        if start_visited[tuple(s_0)] or target_visited[tuple(s_1)]:
-            # already sorted or there is no atom, go on
-            continue
-        start_visited[tuple(s_0)] = 1
-        target_visited[tuple(s_1)] = 1
-    out = typed.List.empty_list(type_coordinate)
-    out.append(start_visited)
-    out.append(target_visited)
-    return out
 
 
 class French(StrategyTemplate):
@@ -51,36 +36,57 @@ class French(StrategyTemplate):
         assert np.sum(start.value) >= np.sum(target.value), f"Unsolvable {np.sum(start.value)} sites cannot be sorted" \
                                                             f" to {np.sum(target.value)} sites"
 
-    def calculate_distances(self):
-        dist = distance.cdist(self.start.coordinates, self.target.coordinates)
-        dist_sorted = np.argsort(dist, axis=None)
+    @staticmethod
+    def calculate_distances(start_coordinates, target_coordinates):
+        dist = distance.cdist(start_coordinates, target_coordinates, 'cityblock').astype(np.int16)
+        dist_sorted = np.argsort(dist.flatten())
+        # dist_sorted = np.argsort(distances, axis=None)
         # https://stackoverflow.com/questions/29734660/python-numpy-keep-a-list-of-indices-of-a-sorted-2d-array
         coordinates_sorted = np.vstack(np.unravel_index(dist_sorted, dist.shape)).T
-        return coordinates_sorted.astype(np.int16)
+        out = coordinates_sorted.astype(np.int16)
+        return out
+
+    @staticmethod
+    @njit((types.ListType(type_coordinate_pair))(types.int16[:, :], types.boolean[:, :], types.boolean[:, :],
+                                                 types.int16[:, :], types.int16[:, :]))
+    def loop_over_distances(distances, start_visited, target_visited, start_coordinates, target_coordinates):
+        queue = typed.List.empty_list(type_coordinate_pair)
+        # queue = []
+        for coord in distances:
+            s_0, s_1 = start_coordinates[coord[0]], target_coordinates[coord[1]]
+            if start_visited[s_0[0], s_0[1]] or target_visited[s_1[0], s_1[1]]:
+                # already sorted or there is no atom, go on
+                continue
+            start_visited[s_0[0], s_0[1]] = 1
+            target_visited[s_1[0], s_1[1]] = 1
+            queue.append(np.append(s_0, s_1))
+        return queue
 
     def run(self):
         # mark already sorted sites
-        start_visited = np.where(self.start.value & self.target.value, np.ones_like(self.start.value),
-                                  np.zeros_like(np.ones_like(self.start.value)))
+        start_visited = np.zeros_like(self.start.value, dtype=np.bool)
+        start_visited[np.logical_and(self.start.value, self.target.value)] = 1
         target_visited = np.copy(start_visited)
-        # loop over sorted distances between start and target
-        # _, __ = loop_over_distances(self.calculate_distances(), start_visited, target_visited,
-        #                             self.start.coordinates, self.target.coordinates)
-        for coord in self.calculate_distances():
-            s_0, s_1 = self.start.coordinates[coord[0]], self.target.coordinates[coord[1]]
-            if start_visited[tuple(s_0)] or target_visited[tuple(s_1)]:
-                # already sorted or there is no atom, go on
-                continue
+        # loop over sorted distances between start and target, build list
+        # this loop is offloaded into a static function to make it jit-compatible
+        distances = self.calculate_distances(self.start.coordinates, self.target.coordinates)
+        queue = self.loop_over_distances(distances, start_visited, target_visited,
+                                         self.start.coordinates, self.target.coordinates)
+        for coord in queue:
+            s_0 = coord[:2]
+            s_1 = coord[2:]
             # add a move to the plan
-            self.current_state = self.plan.add_move(origin=s_0, target=s_1, lattice=self.current_state)
-            # mark sites as visited
-            start_visited[tuple(s_0)] = 1
-            target_visited[tuple(s_1)] = 1
+            self.plan.add_move(origin=s_0, target=s_1, lattice=self.current_state)
+            self.current_state.move(origin=s_0, target=s_1)
         # drop left over atoms
         remainder = Lattice(np.logical_and(self.current_state.value, np.logical_not(self.target.value)),
                             spacing=self.current_state.spacing)
         self.report.update({"site-moves": len(self.plan),
                             "discard-moves": remainder.coordinates.shape[0]})
         for to_discard in remainder.coordinates:
-            self.current_state = self.plan.add_discard(origin=to_discard, lattice=self.current_state)
+            self.plan.add_discard(origin=to_discard, lattice=self.current_state)
+            self.current_state.discard(origin=to_discard)
         return self.plan, self.current_state
+
+def get_coord(arr, pos):
+    return arr[pos]

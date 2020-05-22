@@ -3,11 +3,10 @@
 """
 
 import numpy as np
-from numba import types, typed, typeof
+from numba import types, typed, typeof, njit
 from numba.experimental import jitclass
 from uas import Lattice
-
-type_coordinate = types.int16[:]
+from uas.helper import type_coordinate
 
 spec_move = [
     ("origin", types.int16[:]),
@@ -24,7 +23,8 @@ class Move:
     def __init__(self, origin: np.ndarray, target: np.ndarray):
         self.origin = origin
         self.target = target
-        self.path = typed.List.empty_list(type_coordinate)
+        self.path = []
+        # self.path = typed.List.empty_list(type_coordinate)  # numba
         self.calculate_moves()
 
     def calculate_moves(self):
@@ -35,7 +35,7 @@ class Move:
         raise NotImplementedError
 
 
-@jitclass(spec_move)
+# @jitclass(spec_move)
 class Discard(Move):
     """
     Discard an atom in a site
@@ -55,7 +55,7 @@ class Type1(Move):
         pass
 
 
-@jitclass(spec_move)
+# @jitclass(spec_move)
 class Type2(Move):
     """
     Type 2 move according to Léséleuc (2018).
@@ -63,13 +63,20 @@ class Type2(Move):
     """
 
     def calculate_moves(self):
-        self.path.append(self.origin)
-        difference = self.origin - self.target
-        pointer = np.zeros_like(self.origin) + self.origin
+        self.path = self._calculate_moves(self.origin, self.target)
+
+    @staticmethod
+    @njit((types.ListType(type_coordinate))(type_coordinate, type_coordinate), fastmath=True)
+    def _calculate_moves(origin, target):
+        path = typed.List.empty_list(type_coordinate)
+        path.append(origin)
+        difference = origin - target
+        pointer = np.zeros_like(origin) + origin
         for component in difference:
             # move
             pointer += component
-            self.path.append(pointer)
+            path.append(pointer)
+        return path
 
 
 class Plan:
@@ -94,7 +101,6 @@ class Plan:
         :return: (Lattice)
         """
         self._moves.append(self.move(origin=origin, target=target))
-        return Lattice.move(lattice, origin, target)
 
     def add_discard(self, origin: np.ndarray, lattice: Lattice):
         """
@@ -104,4 +110,3 @@ class Plan:
         :return: (Lattice)
         """
         self._moves.append(self.discard(origin=origin, target=origin))
-        return Lattice.move(lattice, origin, target=None)
