@@ -12,7 +12,7 @@ def generate_mask_box(origin, size, shape):
     mask center is denoted by center.
     the size is the half of the size in one direction: e.g. size = 2 means [0, 1, 1, center, 1, 1, 0]
 
-    :param center: tuple/array with coordinates (x, y)
+    :param origin: tuple/array with coordinates (x, y)
     :param size: integer
     :param shape: tuple/array like (size_x, size_y)
     """

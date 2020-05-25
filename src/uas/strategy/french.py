@@ -10,13 +10,6 @@ from uas.helper import type_coordinate_pair
 from . import StrategyTemplate
 
 
-# @njit((types.int16[:, :])(types.int16[:, :], types.int16[:]))
-def get_coordinates_from_distances(coordinates, coordinate_pair):
-    s_0 = coordinates[0][coordinate_pair[0]]
-    s_1 = coordinates[1][coordinate_pair[1]]
-    return np.array((s_0, s_1))
-
-
 class French(StrategyTemplate):
     """
     src: Sylvain de Léséleuc (2018) - Quantum simulation of spin models with assembled arrays of Rydberg atoms, pp. 51
@@ -38,9 +31,15 @@ class French(StrategyTemplate):
 
     @staticmethod
     def calculate_distances(start_coordinates, target_coordinates):
+        """
+        Calculates distances between start sites and target sites
+        :param start_coordinates:
+        :param target_coordinates:
+        :return:
+        """
         dist = distance.cdist(start_coordinates, target_coordinates, 'cityblock').astype(np.int16)
-        dist_sorted = np.argsort(dist.flatten())
-        # dist_sorted = np.argsort(distances, axis=None)
+        # dist_sorted = np.argsort(dist.flatten())  # use in case this will be jit-ed
+        dist_sorted = np.argsort(dist, axis=None)
         # https://stackoverflow.com/questions/29734660/python-numpy-keep-a-list-of-indices-of-a-sorted-2d-array
         coordinates_sorted = np.vstack(np.unravel_index(dist_sorted, dist.shape)).T
         out = coordinates_sorted.astype(np.int16)
@@ -50,8 +49,17 @@ class French(StrategyTemplate):
     @njit((types.ListType(type_coordinate_pair))(types.int16[:, :], types.boolean[:, :], types.boolean[:, :],
                                                  types.int16[:, :], types.int16[:, :]))
     def loop_over_distances(distances, start_visited, target_visited, start_coordinates, target_coordinates):
+        """
+        Loop over sorted distances between start and target, build list
+        This loop is offloaded into a static function to make it jit-compatible
+        :param distances:
+        :param start_visited:
+        :param target_visited:
+        :param start_coordinates:
+        :param target_coordinates:
+        :return:
+        """
         queue = typed.List.empty_list(type_coordinate_pair)
-        # queue = []
         for coord in distances:
             s_0, s_1 = start_coordinates[coord[0]], target_coordinates[coord[1]]
             if start_visited[s_0[0], s_0[1]] or target_visited[s_1[0], s_1[1]]:
@@ -67,8 +75,6 @@ class French(StrategyTemplate):
         start_visited = np.zeros_like(self.start.value, dtype=np.bool)
         start_visited[np.logical_and(self.start.value, self.target.value)] = 1
         target_visited = np.copy(start_visited)
-        # loop over sorted distances between start and target, build list
-        # this loop is offloaded into a static function to make it jit-compatible
         distances = self.calculate_distances(self.start.coordinates, self.target.coordinates)
         queue = self.loop_over_distances(distances, start_visited, target_visited,
                                          self.start.coordinates, self.target.coordinates)
@@ -87,6 +93,3 @@ class French(StrategyTemplate):
             self.plan.add_discard(origin=to_discard, lattice=self.current_state)
             self.current_state.discard(origin=to_discard)
         return self.plan, self.current_state
-
-def get_coord(arr, pos):
-    return arr[pos]
