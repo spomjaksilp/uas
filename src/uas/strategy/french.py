@@ -6,7 +6,7 @@ import numpy as np
 from scipy.spatial import distance
 from numba import njit, types, typeof, typed
 from uas import Lattice, Plan, Type2
-from uas.helper import type_coordinate_pair
+from uas.helper import type_coordinate, type_coordinate_matrix, type_site_matrix
 from . import StrategyTemplate
 
 
@@ -46,8 +46,8 @@ class French(StrategyTemplate):
         return out
 
     @staticmethod
-    @njit((types.ListType(type_coordinate_pair))(types.int16[:, :], types.boolean[:, :], types.boolean[:, :],
-                                                 types.int16[:, :], types.int16[:, :]))
+    @njit((types.ListType(type_coordinate))(type_coordinate_matrix, type_site_matrix, type_site_matrix,
+                                            type_coordinate_matrix, type_coordinate_matrix))
     def loop_over_distances(distances, start_visited, target_visited, start_coordinates, target_coordinates):
         """
         Loop over sorted distances between start and target, build list
@@ -59,7 +59,7 @@ class French(StrategyTemplate):
         :param target_coordinates:
         :return:
         """
-        queue = typed.List.empty_list(type_coordinate_pair)
+        queue = typed.List.empty_list(type_coordinate)
         for coord in distances:
             s_0, s_1 = start_coordinates[coord[0]], target_coordinates[coord[1]]
             if start_visited[s_0[0], s_0[1]] or target_visited[s_1[0], s_1[1]]:
