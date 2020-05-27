@@ -6,13 +6,26 @@ import numpy as np
 from numba import types, typed, typeof, njit
 from numba.experimental import jitclass
 from uas import Lattice
-from uas.helper import type_coordinate
+from uas.helper import type_coordinate, type_coordinate_matrix
 
 spec_move = [
     ("origin", types.int16[:]),
     ("target", types.int16[:]),
     ("path", types.ListType(type_coordinate)),
 ]
+
+
+@njit((types.ListType(type_coordinate_matrix))(type_coordinate, type_coordinate), fastmath=True)
+def l_path(origin, target):
+    path = typed.List.empty_list(type_coordinate_matrix)
+    # path.append(origin)
+    difference = origin - target
+    pointer = np.copy(origin)
+    # moves
+    pointer[0] = pointer[0] - difference[0]
+    path.append(np.stack((origin, pointer)))
+    path.append(np.stack((pointer, target)))
+    return path
 
 
 class Move:
@@ -50,9 +63,27 @@ class Type1(Move):
     Type 1 move according to Léséleuc (2018).
     Describes a move in between sites
     """
-
     def calculate_moves(self):
-        pass
+        self.path = self._calculate_moves(self.origin, self.target)
+
+    @staticmethod
+    @njit((types.ListType(type_coordinate_matrix))(type_coordinate, type_coordinate), fastmath=True)
+    def _calculate_moves(origin, target):
+        path = typed.List.empty_list(type_coordinate_matrix)
+        # path.append(origin)
+        difference = target - origin
+        diagonal_step = difference / np.abs(difference)
+        # moves
+        # diagonals move (step outside grid)
+        post_origin = origin + diagonal_step
+        pre_target = target - diagonal_step
+        path.append(np.stack((origin, post_origin.astype(np.int16))))
+        # L shaped path between the two intermediate points
+        for piece in l_path(post_origin.astype(np.int16), pre_target.astype(np.int16)):
+            path.append(piece)
+        # path = path + l_path(post_origin.astype(np.int16), pre_target.astype(np.int16))
+        path.append(np.stack((pre_target.astype(np.int16), target)))
+        return path
 
 
 # @jitclass(spec_move)
@@ -61,22 +92,8 @@ class Type2(Move):
     Type 2 move according to Léséleuc (2018).
     Describes a move on the connecting edges of sites
     """
-
     def calculate_moves(self):
-        self.path = self._calculate_moves(self.origin, self.target)
-
-    @staticmethod
-    @njit((types.ListType(type_coordinate))(type_coordinate, type_coordinate), fastmath=True)
-    def _calculate_moves(origin, target):
-        path = typed.List.empty_list(type_coordinate)
-        path.append(origin)
-        difference = origin - target
-        pointer = np.zeros_like(origin) + origin
-        for component in difference:
-            # move
-            pointer += component
-            path.append(pointer)
-        return path
+        self.path = l_path(self.origin, self.target)
 
 
 class Plan:

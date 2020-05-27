@@ -65,6 +65,24 @@ class Lattice(ArrayMixin):
             self._array_cached = True
             return self._array
 
+    def set_coordinates(self, coordinates: np.ndarray):
+        """
+
+        :param coordinates: ndarray
+        :return:
+        """
+        self._coordinates = coordinates
+        self._coordinates_cached = True
+
+    def set_value(self, value: np.ndarray):
+        """
+
+        :param value: ndarray
+        :return:
+        """
+        self._array = value
+        self._array_cached = True
+
     def resample(self, factor: np.ndarray):
         """
         Resample the lattice. The underlying array is then reconstructed
@@ -75,11 +93,10 @@ class Lattice(ArrayMixin):
         new_coordinates = np.copy(self.coordinates)
         new_coordinates[:, 0] = np.around(new_coordinates[:, 0] * factor[0], decimals=0).astype(np.int16)
         new_coordinates[:, 1] = np.around(new_coordinates[:, 1] * factor[1], decimals=0).astype(np.int16)
-        # new_coordinates = np.around(self.coordinates * factor, decimals=0).astype(np.int16)
         new_shape = np.around(np.array(self._array.shape) * factor, decimals=0).astype(np.int16)
-        self._coordinates = new_coordinates
+        self.set_coordinates(new_coordinates)
+        self.set_value(array_from_coordinates(new_coordinates, np.zeros(new_shape, dtype=np.bool)))
         self._shape = new_shape
-        # self._array = array_from_coordinates(new_coordinates, np.zeros(new_shape, dtype=np.bool))
         self.spacing = self.spacing / factor
 
     def rescale(self, spacing: np.ndarray):
