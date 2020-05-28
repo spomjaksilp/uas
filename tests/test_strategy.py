@@ -4,7 +4,6 @@ import numpy as np
 from uas import Lattice
 from uas.helper import Sample
 from uas.strategy import StrategyTemplate, French
-from uas import Plan
 
 logging.basicConfig(level=logging.INFO)
 
@@ -35,7 +34,7 @@ class TestStrategy:
         target_state = Lattice(sample.value)
 
         # act
-        strat = strategy(start=start_state, target=target_state, planner=Plan)
+        strat = strategy(start=start_state, target=target_state)
         plan, end_state = strat.run()
 
     @pytest.mark.parametrize("strategy", STRATEGIES)
@@ -47,7 +46,7 @@ class TestStrategy:
         start_state = Lattice(sample.value)
 
         # act
-        strat = strategy(start=start_state, target=start_state, planner=Plan)
+        strat = strategy(start=start_state, target=start_state)
         plan, end_state = strat.run()
 
         # assert
@@ -66,7 +65,7 @@ class TestStrategy:
 
         # act & assert
         with pytest.raises(AssertionError, match=r"^Unsolvable.*"):
-            strat = strategy(start=start_state, target=target_state, planner=Plan)
+            strat = strategy(start=start_state, target=target_state)
             plan, end_state = strat.run()
 
     @pytest.mark.parametrize("strategy", STRATEGIES)
@@ -82,7 +81,7 @@ class TestStrategy:
         target_state = Lattice(sample.value)
 
         # act
-        strat = strategy(start=start_state, target=target_state, planner=Plan)
+        strat = strategy(start=start_state, target=target_state)
         plan, end_state = strat.run()
 
         # assert
@@ -101,7 +100,7 @@ class TestStrategy:
         target_state = Lattice(sample.value)
 
         # act
-        strat = strategy(start=start_state, target=target_state, planner=Plan)
+        strat = strategy(start=start_state, target=target_state)
         plan, end_state = strat.run()
 
         # assert
@@ -121,7 +120,7 @@ class TestStrategy:
         target_state = Lattice(sample.value)
 
         # act
-        strat = strategy(start=start_state, target=target_state, planner=Plan)
+        strat = strategy(start=start_state, target=target_state)
         plan, end_state = strat.run()
 
         # assert
@@ -142,7 +141,7 @@ class TestStrategy:
         target_state = Lattice(sample.value)
 
         # act
-        strat = strategy(start=start_state, target=target_state, planner=Plan)
+        strat = strategy(start=start_state, target=target_state)
         plan, end_state = strat.run()
 
         # assert
