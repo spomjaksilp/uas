@@ -55,7 +55,7 @@ class Discard(Move):
     """
 
     def calculate_moves(self):
-        self.path.append(self.origin)
+        self.path.append(np.stack((self.origin, self.origin)))
 
 
 class Type1(Move):

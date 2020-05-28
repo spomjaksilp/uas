@@ -111,9 +111,11 @@ class Lattice(ArrayMixin):
     def move(self, origin: np.ndarray, target: np.ndarray):
         self.value[tuple(origin)] = 0
         self.value[tuple(target)] = 1
+        self._coordinates_cached = False
 
     def discard(self, origin: np.ndarray):
         self.value[tuple(origin)] = 0
+        self._coordinates_cached = False
 
 
 def lattice_from_lattice(lattice):
