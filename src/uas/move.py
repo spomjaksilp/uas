@@ -6,7 +6,7 @@ import numpy as np
 from numba import types, typed, typeof, njit
 from numba.experimental import jitclass
 from uas import Lattice
-from uas.helper import type_coordinate, type_coordinate_matrix
+from uas.helper import type_coordinate, type_path_matrix
 
 spec_move = [
     ("origin", types.int16[:]),
@@ -15,9 +15,9 @@ spec_move = [
 ]
 
 
-@njit((types.ListType(type_coordinate_matrix))(type_coordinate, type_coordinate), fastmath=True)
+@njit((types.ListType(type_path_matrix))(types.float32[:], types.float32[:]), fastmath=True)
 def l_path(origin, target):
-    path = typed.List.empty_list(type_coordinate_matrix)
+    path = typed.List.empty_list(type_path_matrix)
     # path.append(origin)
     difference = origin - target
     pointer = np.copy(origin)
@@ -64,25 +64,29 @@ class Type1(Move):
     Describes a move in between sites
     """
     def calculate_moves(self):
-        self.path = self._calculate_moves(self.origin, self.target)
+        self.path = self._calculate_moves(self.origin.astype(np.float32), self.target.astype(np.float32))
 
     @staticmethod
-    @njit((types.ListType(type_coordinate_matrix))(type_coordinate, type_coordinate), fastmath=True)
+    @njit((types.ListType(type_path_matrix))(types.float32[:], types.float32[:]), fastmath=True)
     def _calculate_moves(origin, target):
-        path = typed.List.empty_list(type_coordinate_matrix)
+        path = typed.List.empty_list(type_path_matrix)
         # path.append(origin)
         difference = target - origin
-        diagonal_step = difference / np.abs(difference)
+        diagonal_step = difference / np.abs(difference) / 2
+        # handle edge case: straight line, i.e. one component of difference == 0
+        for i in range(2):
+            if difference[i] == 0:
+                diagonal_step[i] = - 0.5
         # moves
         # diagonals move (step outside grid)
-        post_origin = origin + diagonal_step
-        pre_target = target - diagonal_step
-        path.append(np.stack((origin, post_origin.astype(np.int16))))
+        post_origin = np.abs(origin + diagonal_step)
+        pre_target = np.abs(target - diagonal_step)
+        path.append(np.stack((origin, post_origin)))
         # L shaped path between the two intermediate points
-        for piece in l_path(post_origin.astype(np.int16), pre_target.astype(np.int16)):
-            path.append(piece)
-        # path = path + l_path(post_origin.astype(np.int16), pre_target.astype(np.int16))
-        path.append(np.stack((pre_target.astype(np.int16), target)))
+        l_x, l_y = l_path(post_origin, pre_target)
+        path.append(l_x)
+        path.append(l_y)
+        path.append(np.stack((pre_target, target)))
         return path
 
 
@@ -93,7 +97,7 @@ class Type2(Move):
     Describes a move on the connecting edges of sites
     """
     def calculate_moves(self):
-        self.path = l_path(self.origin, self.target)
+        self.path = l_path(self.origin.astype(np.float32), self.target.astype(np.float32))
 
 
 class Plan:

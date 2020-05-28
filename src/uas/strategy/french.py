@@ -5,7 +5,7 @@ From Paris
 import numpy as np
 from scipy.spatial import distance
 from numba import njit, types, typeof, typed
-from uas import Lattice, Plan, Type2
+from uas import Lattice, Plan, Type1, Type2
 from uas.helper import type_coordinate, type_coordinate_matrix, type_site_matrix
 from . import StrategyTemplate
 
@@ -23,7 +23,7 @@ class French(StrategyTemplate):
         self.start = start
         self.current_state = start
         self.target = target
-        self.plan = planner(Type2)
+        self.plan = planner(Type1)
         self.report = {}
         # first assert that a possible solution exists
         assert np.sum(start.value) >= np.sum(target.value), f"Unsolvable {np.sum(start.value)} sites cannot be sorted" \
