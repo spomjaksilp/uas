@@ -82,7 +82,7 @@ class French(StrategyTemplate):
             s_0 = coord[:2]
             s_1 = coord[2:]
             # add a move to the plan
-            self.plan.add_move(origin=s_0, target=s_1, lattice=self.current_state)
+            self.plan.add_move(origin=s_0, target=s_1)
             self.current_state.move(origin=s_0, target=s_1)
         # drop left over atoms
         remainder = Lattice(np.logical_and(self.current_state.value, np.logical_not(self.target.value)),
@@ -90,6 +90,6 @@ class French(StrategyTemplate):
         self.report.update({"site-moves": len(self.plan),
                             "discard-moves": remainder.coordinates.shape[0]})
         for to_discard in remainder.coordinates:
-            self.plan.add_discard(origin=to_discard, lattice=self.current_state)
+            self.plan.add_discard(origin=to_discard)
             self.current_state.discard(origin=to_discard)
         return self.plan, self.current_state
