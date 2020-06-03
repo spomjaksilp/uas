@@ -35,7 +35,7 @@ class Plan:
     def __len__(self):
         return len(self._moves)
 
-    def add_move(self, origin: np.ndarray, target: np.ndarray, lattice: Lattice):
+    def add_move(self, origin: np.ndarray, target: np.ndarray):
         """
         Adds moves to the list of moves
         :param origin: (ndarray) coordinate
@@ -45,7 +45,7 @@ class Plan:
         """
         self._moves.append(self.move(origin=origin, target=target))
 
-    def add_discard(self, origin: np.ndarray, lattice: Lattice):
+    def add_discard(self, origin: np.ndarray):
         """
         Adds a discard move to the list of moves
         :param origin: (ndarray) coordinate
