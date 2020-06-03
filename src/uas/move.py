@@ -3,7 +3,6 @@
 """
 
 import numpy as np
-from uas import Lattice
 
 
 class Move:
@@ -27,9 +26,7 @@ class Plan:
     An ordered collection of moves
     """
 
-    def __init__(self, move: Move = Move, discard=Discard):
-        self.move = move
-        self.discard = discard
+    def __init__(self):
         self._moves = []
 
     def __len__(self):
@@ -40,8 +37,7 @@ class Plan:
         Adds moves to the list of moves
         :param origin: (ndarray) coordinate
         :param target: (ndarray) coordinate
-        :param lattice: (Lattice)
-        :return: (Lattice)
+        :return:
         """
         self._moves.append(self.move(origin=origin, target=target))
 
@@ -49,7 +45,6 @@ class Plan:
         """
         Adds a discard move to the list of moves
         :param origin: (ndarray) coordinate
-        :param lattice: (Lattice)
-        :return: (Lattice)
+        :return:
         """
         self._moves.append(self.discard(origin=origin, target=origin))
