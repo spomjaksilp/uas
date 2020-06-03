@@ -51,21 +51,25 @@ class Type1(Trajectory):
     def _calculate_moves(origin, target):
         path = typed.List.empty_list(type_path_matrix)
         difference = target - origin
-        diagonal_step = difference / np.abs(difference) / 2
-        # handle edge case: straight line, i.e. one component of difference == 0
-        for i in range(2):
-            if difference[i] == 0:
-                diagonal_step[i] = - 0.5
-        # moves
-        # diagonals move (step outside grid)
-        post_origin = np.abs(origin + diagonal_step)
-        pre_target = np.abs(target - diagonal_step)
-        path.append(np.stack((origin, post_origin)))
-        # L shaped path between the two intermediate points
-        l_x, l_y = l_trajectory(post_origin, pre_target)
-        path.append(l_x)
-        path.append(l_y)
-        path.append(np.stack((pre_target, target)))
+        # handle edge case: moving only one site
+        if np.linalg.norm(difference) == 1:
+            path.append(np.stack(origin, target))
+        else:
+            diagonal_step = difference / np.abs(difference) / 2
+            # handle edge case: straight line, i.e. one component of difference == 0
+            for i in range(2):
+                if difference[i] == 0:
+                    diagonal_step[i] = - 0.5
+            # moves
+            # diagonals move (step outside grid)
+            post_origin = np.abs(origin + diagonal_step)
+            pre_target = np.abs(target - diagonal_step)
+            path.append(np.stack((origin, post_origin)))
+            # L shaped path between the two intermediate points
+            l_x, l_y = l_trajectory(post_origin, pre_target)
+            path.append(l_x)
+            path.append(l_y)
+            path.append(np.stack((pre_target, target)))
         return path
 
 
