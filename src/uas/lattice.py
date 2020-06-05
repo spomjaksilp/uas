@@ -122,3 +122,6 @@ def lattice_from_lattice(lattice):
     obj = Lattice(array=np.zeros_like(lattice.value), spacing=lattice.spacing)
     obj._array = np.copy(lattice.value)
     return obj
+
+#
+# class Timeline:
