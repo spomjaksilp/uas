@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 from copy import deepcopy
 from uas import Lattice, Simulator
-from uas.helper import Sample, animate_timeline
+from uas.helper import Sample
 from uas.strategy import French
 
 

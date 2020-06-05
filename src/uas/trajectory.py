@@ -4,7 +4,6 @@
 
 import numpy as np
 from numba import types, typed, typeof, njit
-from uas import Lattice
 from uas.helper import type_path_matrix
 
 
@@ -33,11 +32,11 @@ class Trajectory:
     Trajectories describe the way from a coordinate (x0, y0) to (x1, x1) via vectors
     """
 
-    def __init__(self, origin: np.ndarray, target: np.ndarray, lattice: Lattice,
+    def __init__(self, origin: np.ndarray, target: np.ndarray, spacing: np.ndarray,
                  t_pick: float, t_place: float, v_move: float):
         self.origin = origin
         self.target = target
-        self.lattice = lattice
+        self.spacing = spacing
         self.t_pick = t_pick
         self.t_place = t_place
         self.v_move = v_move
@@ -64,7 +63,7 @@ class Trajectory:
         self.timeline.append(np.array((timer, 1, 0, 0)))
         # moves
         for ds in self.path:
-            timer += calculate_path_length(np.array((ds, ), dtype=np.float32), self.lattice.spacing) / self.v_move
+            timer += calculate_path_length(np.array((ds, ), dtype=np.float32), self.spacing) / self.v_move
             self.timeline.append(np.array((timer, 1, ds[0], ds[1])))
         # place
         timer += self.t_place
