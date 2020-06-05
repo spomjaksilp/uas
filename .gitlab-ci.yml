@@ -1,9 +1,23 @@
 stages:
   - test
+  - build
 
-test_py:
+test:
   type: test
+  tags:
+    - python
+    - numpy
   script:
   - "pip install -r requirements.txt"
   - "cd tests"
   - "pytest"
+
+
+build:
+  stage: build
+  tags:
+    - python
+    - numpy
+  script:
+    - "python setup.py install"
+
