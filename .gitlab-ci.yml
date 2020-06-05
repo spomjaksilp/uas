@@ -1,0 +1,9 @@
+stages:
+  - test
+
+test_py:
+  type: test
+  script:
+  - "pip install -r requirements.txt"
+  - "cd tests"
+  - "pytest"
