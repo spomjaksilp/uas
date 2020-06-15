@@ -4,19 +4,19 @@ This short example creates packed square target lattices of various sizes and si
 
 import math
 import numpy as np
+from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from copy import deepcopy
 from uas import Lattice, Frontend
 from uas.helper import Sample
 from uas.strategy import French
 
-DO_CALCULATION = False
+DO_CALCULATION = True
+DO_PLOTTING = False
 p_loading = 0.5
 n_runs = 100
-shape_min = 5
-shape_max = 10
 
-shapes = np.arange(shape_min, shape_max + 1, 1)
+shapes = np.around(np.logspace(start=1, stop=4, num=3, base=2), decimals=0)
 means = []
 stds = []
 
@@ -49,12 +49,32 @@ if DO_CALCULATION:
 
     np.save(file="packed_square_scaling_data.npy", arr=np.array(out))
 
-data = np.load("packed_square_scaling_data.npy", allow_pickle=True)
+if DO_PLOTTING:
+    data = np.load("packed_square_scaling_data.npy", allow_pickle=True)
 
-print(data[:, 0:4])
-# fig, ax = plt.subplots()
-# ax.errorbar(shapes, (means / 1e3), yerr=(stds / 1e3))
-#
-# plt.tight_layout()
-# plt.show()
-#
+    sites = data[:, 0] ** 2
+    means = data[:, 2] / 1e3
+    stds = data[:, 3] / 1e3
+
+
+    def scaling_func(x, a, b):
+        return a * x ** b
+
+
+    fig, ax = plt.subplots()
+    ax.errorbar(sites, means, yerr=stds, fmt="o")
+    p0 = [.1, .5]
+    popt, perr = curve_fit(scaling_func, sites, means, p0)
+    a, b = f"{popt[0]:.2f}", f"{popt[1]:.2f}"
+    ax.plot(sites, scaling_func(sites, *popt), label="fitted scaling with ${%s}N^{%s}$" % (a, b))
+
+    ax.set_title("Simulated assembly time into tight-packed square lattice\n"
+                 "$v_{move}=100\\,\\mu s/ms$, $\\tau_{pick}=\\tau_{place}=300\\,\\mu s$")
+    ax.set_xlabel("number N of target sites")
+    ax.set_ylabel("assembly time [ms]")
+    ax.legend(loc="lower right")
+    ax.set_yscale("log")
+    ax.set_xscale("log")
+    plt.tight_layout()
+    plt.show()
+
