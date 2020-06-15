@@ -33,10 +33,11 @@ class Trajectory:
     """
 
     def __init__(self, origin: np.ndarray, target: np.ndarray, spacing: np.ndarray,
-                 t_pick: float, t_place: float, v_move: float):
+                 t_start: float, t_pick: float, t_place: float, v_move: float):
         self.origin = origin
         self.target = target
         self.spacing = spacing
+        self.timer = t_start
         self.t_pick = t_pick
         self.t_place = t_place
         self.v_move = v_move
@@ -54,20 +55,19 @@ class Trajectory:
 
     def build_timeline(self):
         """
-
+        timeline signature: [timer, picker, x-component, y-component]
         :return:
         """
         # pick
-        timer = 0
-        timer += self.t_pick
-        self.timeline.append(np.array((timer, 1, 0, 0)))
+        self.timer += self.t_pick
+        self.timeline.append(np.array((self.timer, 1, 0, 0)))
         # moves
         for ds in self.path:
-            timer += calculate_path_length(np.array((ds, ), dtype=np.float32), self.spacing) / self.v_move
-            self.timeline.append(np.array((timer, 1, ds[0], ds[1])))
+            self.timer += calculate_path_length(np.array((ds, ), dtype=np.float32), self.spacing) / self.v_move
+            self.timeline.append(np.array((self.timer, 1, ds[0], ds[1])))
         # place
-        timer += self.t_place
-        self.timeline.append(np.array((timer, 0, 0, 0)))
+        self.timer += self.t_place
+        self.timeline.append(np.array((self.timer, 0, 0, 0)))
 
 
 class Type1(Trajectory):

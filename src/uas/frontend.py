@@ -21,14 +21,18 @@ class Frontend:
 
     def parse_plan(self):
         timeline = []
+        timer = 0
         for step in self.plan.moves:
             if step.discard:
                 trajectory = Discard(origin=step.origin, target=step.target, spacing=self.spacing,
-                                     t_pick=self.t_pick, t_place=(self.t_place / 10), v_move=self.v_move)
+                                     t_start=timer, t_pick=self.t_pick, t_place=(self.t_place / 10),
+                                     v_move=self.v_move)
             else:
                 trajectory = Type1(origin=step.origin, target=step.target, spacing=self.spacing,
-                                   t_pick=self.t_pick, t_place=self.t_place, v_move=self.v_move)
+                                   t_start=timer, t_pick=self.t_pick, t_place=(self.t_place / 10),
+                                   v_move=self.v_move)
             timeline.extend(trajectory.timeline)
+            timer = timeline[-1][0]
         self.timeline = np.array(timeline, dtype=np.float32)
         return timeline
 
@@ -44,16 +48,20 @@ class Simulator(Frontend):
 
     def parse_plan(self):
         timeline = []
+        timer = 0
         for step in self.plan.moves:
             if step.discard:
                 self.lattice.discard(step.origin)
                 trajectory = Discard(origin=step.origin, target=step.target, spacing=self.spacing,
-                                     t_pick=self.t_pick, t_place=(self.t_place / 10), v_move=self.v_move)
+                                     t_start=timer, t_pick=self.t_pick, t_place=(self.t_place / 10),
+                                     v_move=self.v_move)
             else:
                 self.lattice.move(step.origin, step.target)
                 trajectory = Type1(origin=step.origin, target=step.target, spacing=self.spacing,
-                                   t_pick=self.t_pick, t_place=self.t_place, v_move=self.v_move)
+                                   t_start=timer, t_pick=self.t_pick, t_place=(self.t_place / 10),
+                                   v_move=self.v_move)
             timeline.extend(trajectory.timeline)
+            timer = timeline[-1][0]
             self.state.append({
                 "time": timeline[-1][0],
                 "lattice": deepcopy(self.lattice)
