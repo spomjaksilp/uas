@@ -35,6 +35,11 @@ def array_from_coordinates(coordinates, new_array):
 # @jitclass(spec_lattice)
 class Lattice(ArrayMixin):
     def __init__(self, array: np.ndarray, spacing: np.ndarray = np.array([5e-6, 5e-6], dtype=np.float32)):
+        """
+
+        :param array:
+        :param spacing: (ndarray) [µm]
+        """
         self._array = array
         self._array_cached = True
         self._shape = self._array.shape

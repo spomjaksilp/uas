@@ -14,9 +14,9 @@ class Frontend:
     def __init__(self, spacing: np.ndarray, plan: Plan):
         self.spacing = spacing
         self.plan = plan
-        self.v_move = 100e-6/1e-3  # 100µm/ms
-        self.t_pick = 300e-6  # 300µs
-        self.t_place = 300e-6  # 300µs
+        self.v_move = 100/1e3  # [µm/µs] 100µm/ms
+        self.t_pick = 300  # [µs] 300µs
+        self.t_place = 300  # [µs] 300µs
         self.timeline = np.ndarray(shape=(2, 2), dtype=np.float32)
 
     def parse_plan(self):

@@ -14,7 +14,7 @@ SHAPES = [
 class TestLattice:
     def test_jit_compilation_time(self):
         # assemble
-        old_spacing = np.array((5e-6, 5e-6))
+        old_spacing = np.array((5, 5))
         factor = np.array((2, 2))
         sample = Sample((15, 15))
         sample.add_random(0.5)
@@ -38,7 +38,7 @@ class TestLattice:
     @pytest.mark.parametrize("shape", SHAPES)
     def test_resample(self, shape):
         # assemble
-        old_spacing = np.array((5e-6, 5e-6))
+        old_spacing = np.array((5, 5))
         factor = np.array((2, 2))
         sample = Sample(shape)
         sample.add_random(0.5)
@@ -56,7 +56,7 @@ class TestLattice:
     @pytest.mark.parametrize("shape", SHAPES)
     def test_rescale(self, shape):
         # assemble
-        old_spacing = np.array((5e-6, 5e-6))
+        old_spacing = np.array((5, 5))
         new_spacing = old_spacing / 2
         sample = Sample(shape)
         sample.add_random(0.5)
