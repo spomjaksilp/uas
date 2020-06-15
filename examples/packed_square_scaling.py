@@ -16,7 +16,7 @@ DO_PLOTTING = False
 p_loading = 0.5
 n_runs = 100
 
-shapes = np.around(np.logspace(start=1, stop=4, num=3, base=2), decimals=0)
+shapes = np.around(np.logspace(start=1, stop=9, num=50, base=2), decimals=0)
 means = []
 stds = []
 
