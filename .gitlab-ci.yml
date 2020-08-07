@@ -1,6 +1,6 @@
 stages:
   - test
-  - deploy
+  - build
 
 test:
   type: test
@@ -14,12 +14,12 @@ test:
     - "cd tests"
     - "pytest"
 
-  build:
-    type: deploy
-    tags:
-      - python
-    script:
-      - "virtualenv --system-site-packages myapp"
-      - "source myapp/bin/activate"
-      - "pip install -r requirements.txt"
-      - "python setup.py install"
+build:
+  type: build
+  tags:
+    - python
+  script:
+    - "virtualenv --system-site-packages myapp"
+    - "source myapp/bin/activate"
+    - "pip install -r requirements.txt"
+    - "python setup.py install"
