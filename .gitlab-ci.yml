@@ -1,12 +1,14 @@
 default:
-  image: qao.physik.uni-kl.de:5000/qao-minimal:latest
+  image:
+    name: qao.physik.uni-kl.de:5000/qao-minimal:latest
+    entrypoint: ["/bin/bash", "-l", "-c"]
 
 stages:
   - test
   - build
 
 test:
-  type: test
+  stage: test
   tags:
     - python
   script:
@@ -18,7 +20,7 @@ test:
     - "pytest"
 
 build:
-  type: build
+  stage: build
   tags:
     - python
   script:
