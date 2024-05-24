@@ -8,7 +8,7 @@ from celluloid import Camera
 
 
 def add_gaussian(image, sigma, amplitude, center):
-    x, y = np.mgrid[0:image.shape[0], 0:image.shape[1]].astype(np.float)
+    x, y = np.mgrid[0:image.shape[0], 0:image.shape[1]].astype(float)
     x -= center[0]
     y -= center[1]
     image += amplitude * np.exp(-(x ** 2 + y ** 2) / (2 * sigma ** 2))
