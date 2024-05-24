@@ -21,11 +21,11 @@ def plot_lattice(lattice):
     :param lattice:
     :return:
     """
-    # rescale to 0.1µm
-    lattice.rescale(np.array((.2, .2)))
-    image = np.zeros(lattice.value.shape)
+    # rescale to 0.2µm
+    lattice.rescale(np.array((200e-9, 200e-9)))
+    image = np.zeros(lattice.value.shape, dtype=float)
     for coord in lattice.coordinates:
-        image = add_gaussian(image=image, sigma=1.5, amplitude=1, center=coord)
+        image = add_gaussian(image=image, sigma=2, amplitude=1, center=coord)
     return image
 
 
@@ -34,6 +34,7 @@ def animate_timeline(timeline):
     fig.set_size_inches(10, 10, True)
     camera = Camera(fig)
     for timestep in timeline:
+        print(f"{timestep['time'] * 1e-3:.1f}ms")
         ax.imshow(plot_lattice(timestep["lattice"]))
         ax.text(0, -0.05, f"{timestep['time'] * 1e-3:.1f}ms", transform=ax.transAxes)
         camera.snap()

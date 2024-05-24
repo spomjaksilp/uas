@@ -9,7 +9,7 @@ from uas.helper import Sample, animate_timeline
 from uas.strategy import French
 
 
-shape = (15, 15)
+shape = (20, 20)
 size = (10, 10)
 start_state = Lattice(np.load(f"./data/sample_{shape[0]}_{shape[1]}.npy"))
 sample = Sample(shape)
@@ -20,4 +20,4 @@ plan, end_state = strat.run()
 simulator = Simulator(lattice=start_state, plan=plan)
 
 simulator.parse_plan()
-animate_timeline(simulator.timeline)
+animate_timeline(simulator.state)
