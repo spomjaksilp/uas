@@ -2,6 +2,7 @@
 This short example creates packed square target lattices of various sizes and simulates their scaling behaviour
 """
 
+from functools import partial
 import math
 import numpy as np
 from scipy.optimize import curve_fit
@@ -10,16 +11,39 @@ from copy import deepcopy
 from uas import Lattice, Frontend
 from uas.helper import Sample
 from uas.strategy import French
+from multiprocessing import cpu_count
+from joblib import Parallel, delayed
+
+
+def run(target_state: Sample, p_loading):
+    """
+    Execute one sorting into target_state with given loading probability and return the required time
+    """
+    start_sample = Sample(shape=target_state.value.shape)
+    start_sample.add_random(probability=0.5)
+    start_state = Lattice(start_sample.value)
+    try:
+        strat = French(start=deepcopy(start_state), target=target_state)
+        plan, end_state = strat.run()
+        frontend = Frontend(plan=plan, spacing=start_state.spacing)
+        timeline = frontend.parse_plan()
+        completion_time = timeline[-1][0]
+    except AssertionError:
+        # cannot sort, add NaN to list
+        completion_time = np.NaN
+    return completion_time
+
 
 DO_CALCULATION = True
-DO_PLOTTING = False
+DO_PLOTTING = True
 p_loading = 0.5
-n_runs = 100
+# runs per shape 
+n_runs = 20
+# threads
+n_jobs = cpu_count() - 1
 
-shapes = np.around(np.logspace(start=1, stop=9, num=50, base=2), decimals=0)
-means = []
-stds = []
-
+# array shapes
+shapes = np.around(np.logspace(start=1, stop=6, num=10, base=2), decimals=0)
 out = []
 
 if DO_CALCULATION:
@@ -30,20 +54,8 @@ if DO_CALCULATION:
         target_sample = Sample(shape=(shape_sample, shape_sample))
         target_sample.add_rect(origin=(2, 2), size=(shape_target, shape_target))
         target_state = Lattice(target_sample.value)
-        completion_time = []
-        for i in range(n_runs):
-            start_sample = Sample(shape=(shape_sample, shape_sample))
-            start_sample.add_random(probability=0.5)
-            start_state = Lattice(start_sample.value)
-            try:
-                strat = French(start=deepcopy(start_state), target=target_state)
-                plan, end_state = strat.run()
-                frontend = Frontend(plan=plan, spacing=start_state.spacing)
-                timeline = frontend.parse_plan()
-                completion_time.append(timeline[-1][0])
-            except AssertionError:
-                # cannot sort, add NaN to list
-                completion_time.append(np.NaN)
+        this_run = partial(run, target_state=target_state, p_loading = p_loading)
+        completion_time = Parallel(n_jobs=n_jobs, backend="multiprocessing")(delayed(this_run)() for i in range(n_runs))
         out.append([shape_target, shape_sample, np.nanmean(completion_time), np.nanstd(completion_time),
                     *completion_time])
 
@@ -76,5 +88,5 @@ if DO_PLOTTING:
     ax.set_yscale("log")
     ax.set_xscale("log")
     plt.tight_layout()
-    plt.show()
+    plt.savefig("example_scaling_behavior.png", dpi=300)
 
