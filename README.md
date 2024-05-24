@@ -48,4 +48,4 @@ python examples/simulate_and_animate.py
 ### Result:
 Generates `animation.mp4`.
 
-![Example 2](animation.mp4)
+![Example 2](animation.gif)
