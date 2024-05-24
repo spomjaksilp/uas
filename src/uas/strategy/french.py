@@ -72,7 +72,7 @@ class French(StrategyTemplate):
 
     def run(self):
         # mark already sorted sites
-        start_visited = np.zeros_like(self.start.value, dtype=np.bool)
+        start_visited = np.zeros_like(self.start.value, dtype=bool)
         start_visited[np.logical_and(self.start.value, self.target.value)] = 1
         target_visited = np.copy(start_visited)
         distances = self.calculate_distances(self.start.coordinates, self.target.coordinates)

@@ -66,7 +66,7 @@ class Lattice(ArrayMixin):
             return self._array
         # get array
         else:
-            self._array = array_from_coordinates(self.coordinates, np.zeros(self._shape, dtype=np.bool))
+            self._array = array_from_coordinates(self.coordinates, np.zeros(self._shape, dtype=bool))
             self._array_cached = True
             return self._array
 
@@ -100,7 +100,7 @@ class Lattice(ArrayMixin):
         new_coordinates[:, 1] = np.around(new_coordinates[:, 1] * factor[1], decimals=0).astype(np.int16)
         new_shape = np.around(np.array(self._array.shape) * factor, decimals=0).astype(np.int16)
         self.set_coordinates(new_coordinates)
-        self.set_value(array_from_coordinates(new_coordinates, np.zeros(new_shape, dtype=np.bool)))
+        self.set_value(array_from_coordinates(new_coordinates, np.zeros(new_shape, dtype=bool)))
         self._shape = new_shape
         self.spacing = self.spacing / factor
 

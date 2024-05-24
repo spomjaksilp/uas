@@ -63,7 +63,7 @@ class Sample(ArrayMixin):
         """
         :param shape: list as used in numpy
         """
-        self._array = np.zeros(shape, dtype=np.bool)
+        self._array = np.zeros(shape, dtype=bool)
 
     @property
     def shape(self):
@@ -89,7 +89,7 @@ class Sample(ArrayMixin):
         :param size: (list) size
         :return:
         """
-        self._array += generate_mask_box(origin=origin, size=size, shape=self.shape).astype(np.bool)
+        self._array += generate_mask_box(origin=origin, size=size, shape=self.shape).astype(bool)
 
     def add_disk(self, origin: tuple = (20, 20), radius: float = 10):
         """
