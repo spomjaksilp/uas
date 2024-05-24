@@ -48,4 +48,4 @@ python examples/simulate_and_animate.py
 ### Result:
 Generates `animation.mp4`.
 
-<video src="animation.mp4" width="640" controls></video>
+![Example 2](animation.mp4)
